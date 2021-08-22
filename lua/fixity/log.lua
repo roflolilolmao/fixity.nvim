@@ -5,13 +5,13 @@ local Log = require'fixity.display':new{
   keymaps = {
     ['o'] = {method = 'compact_summary'};
 
-    ['co'] = {func = commands.checkout, args = {method = 'find_commit'}};
+    ['co'] = {func = commands.update.checkout, args = {method = 'find_commit'}};
 
-    ['d'] = {func = commands.branch, args = {'-d', {method = 'find_commit'}}};
-    ['D'] = {func = commands.branch, args = {'-D', {method = 'find_commit'}}};
+    ['d'] = {func = commands.update.branch, args = {'-d', {method = 'find_commit'}}};
+    ['D'] = {func = commands.update.branch, args = {'-D', {method = 'find_commit'}}};
 
-    ['rr'] = {func = commands.rebase, args = {method = 'find_commit'}},
-    ['ri'] = {func = commands.rebase, args = {'--interactive', {method = 'find_commit'}}};
+    ['rr'] = {func = commands.update.rebase, args = {method = 'find_commit'}},
+    ['ri'] = {func = commands.update.rebase, args = {'--interactive', {method = 'find_commit'}}};
   },
   split = 'topleft vsplit',
   syntax = [[
@@ -41,6 +41,7 @@ function Log:find_commit()
   local target
 
   if decoration ~= nil then
+    -- TODO: prioritize local branches
     decoration = decoration:gsub('HEAD %-> ', '')
     target = decoration:gsub([[,.*]], '')
   else
@@ -51,11 +52,22 @@ function Log:find_commit()
 end
 
 function Log:compact_summary()
-  local commit = self:find_commit() -- ENQUIRE
+  local commit = self:find_commit()
   require'fixity.compact-summary':send_it(
-    {'diff', '--compact-summary'},
-    {string.format('%s^..%s', commit, commit)}
+    'diff',
+    {
+      '--compact-summary',
+      string.format('%s^..%s', commit, commit)
+    }
   )
+end
+
+function Log:next()
+  -- TODO: find next decoration
+end
+
+function Log:previous()
+  -- TODO: find previous decoration
 end
 
 return Log

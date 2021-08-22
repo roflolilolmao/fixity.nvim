@@ -11,16 +11,19 @@ end
 local Display = {
   __module = 'display';
   keymaps = {
+    ['n'] = {method = 'next'},
+    ['p'] = {method = 'previous'},
+
     ['q'] = close;
 
-    ['f'] = commands.fetch,
+    ['f'] = {func = commands.update.fetch, args = {'--all', '--prune'}},
 
-    ['cc'] = commands.commit,
-    ['ca'] = {func = commands.commit, args = {'--amend'}},
-    ['ce'] = {func = commands.commit, args = {'--amend', '--no-edit'}};
+    ['cc'] = commands.update.commit,
+    ['ca'] = {func = commands.update.commit, args = {'--amend'}},
+    ['ce'] = {func = commands.update.commit, args = {'--amend', '--no-edit'}};
 
-    ['xp'] = commands.push,
-    ['xPF'] = {func = commands.push, args = {'--force'}};
+    ['xp'] = commands.update.push,
+    ['xPF'] = {func = commands.update.push, args = {'--force'}};
   },
   split = 'leftabove split',
   options = {},
@@ -29,7 +32,7 @@ Display.__index = Display
 
 function Display.update_displays()
   local function update(display)
-    -- TODO: clean up that dev thingy
+    -- DEV: only `display:update` should be called
     local module = string.format('fixity.%s', display.__module)
     require'plenary.reload'.reload_module(module, true)
     module = require(module)
@@ -45,7 +48,7 @@ function Display.update_displays()
 
   for buf, display in pairs(__displays) do
     if not pcall(update, display) then
-      print('delete buffer', buf)
+      print('Unknown error, deleted buffer', buf)
       __displays[buf] = nil
     end
   end
@@ -88,56 +91,65 @@ function Display:create_buf(lines)
 
   local win = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(win, self.buf)
+  vim.api.nvim_win_set_option(win, 'scrolloff', 1)
 
   self:set_content(lines)
-  self:set_view()
-
   self:set_keymaps()
   self:set_syntax()
   self:set_highlights()
+  self:set_view()
 end
 
 function Display:set_content(lines)
+  local command = {self.command, {self.args}}
+  self.buffer_header = {table.concat(vim.tbl_flatten(command), ' '), ''}
+
   if self.preprocess_lines then
     lines = self:preprocess_lines(lines)
   end
 
-  local command = {}
-  vim.list_extend(command, self.command or {})
-  vim.list_extend(command, self.args or {})
-  lines = vim.list_extend({table.concat(command, ' '), ''}, lines)
+  lines = vim.list_extend(
+    vim.fn.deepcopy(self.buffer_header),
+    lines
+  )
 
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', true)
   vim.api.nvim_buf_set_lines(self.buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', false)
+end
 
+function Display:set_view()
   local win = vim.fn.bufwinid(self.buf)
 
   if win > 0 and self.options.winfixheight then
     vim.api.nvim_win_set_height(win, vim.api.nvim_buf_line_count(self.buf))
     vim.api.nvim_win_set_option(win, 'winfixheight', true)
-    vim.fn.win_execute(win, [[call winrestview({'topline': 1})]]) -- ENQUIRE
+    vim.fn.win_execute(win, [[call winrestview({'topline': 1})]])
   end
-end
 
-function Display:set_view()
-  vim.fn.winrestview{lnum = 3}
+  vim.fn.winrestview{lnum = #self.buffer_header + 1}
 end
 
 function Display:update()
-  commands.send_it(self.command, self.args, function(result)
+  commands.silent.callback(function(result)
     self:set_content(result)
+
+    if self.should_close then
+      if self:should_close() then
+        vim.api.nvim_buf_delete(self.buf, {})
+        return
+      end
+    end
+
     self:set_keymaps()
 
     vim.api.nvim_buf_call(self.buf, function()
+      -- DEV: `set_syntax` and `set_highlights` should be removed
       self:set_syntax()
       self:set_highlights()
+      self:set_view()
     end)
-
-    if self.update_specific then
-      self:update_specific()
-    end
-  end)
+  end)[self.command](self.args)
 end
 
 function Display:set_map(lhs, rhs)
@@ -237,13 +249,29 @@ function Display:set_highlights()
 end
 
 function Display:send_it(command, args)
-  commands.send_it(
-    command,
-    args,
+  commands.silent.callback(
     function(result)
       self:new{command = command, args = args}:create_buf(result)
     end
-  )
+  )[command](args)
+end
+
+function Display:next()
+  local win = vim.fn.bufwinid(self.buf)
+  local row, col = unpack(vim.api.nvim_win_get_cursor(win))
+
+  if row < vim.fn.line('$') then
+    vim.api.nvim_win_set_cursor(win, {row + 1, col})
+  end
+end
+
+function Display:previous()
+  local win = vim.fn.bufwinid(self.buf)
+  local row, col = unpack(vim.api.nvim_win_get_cursor(win))
+
+  if row > #self.buffer_header + 1 then
+    vim.api.nvim_win_set_cursor(win, {row - 1, col})
+  end
 end
 
 return Display

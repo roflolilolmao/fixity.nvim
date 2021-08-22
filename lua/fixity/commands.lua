@@ -27,50 +27,7 @@ local function build_args(command, args)
   )
 end
 
-local commands = {}
-
--- Some black magic to enable calling any git command without explicitly
--- declaring a function that will just call `jobstart` or `termopen`.
-local _index = {}
-
-setmetatable(commands, {
-  __index = function(t, k)
-    if _index[k] ~= nil then
-      return _index[k]
-    end
-
-    return function(args)
-      t.pop(k, args)
-    end
-  end,
-
-  __newindex = function(t, k, v)
-    _index[k] = v
-  end;
-})
-
-commands.silent = {}
-
-setmetatable(commands.silent, {
-  __index = function(_, command)
-    return function(args)
-      local job = vim.fn.jobstart(
-        build_args('git', {command, args}),
-        {
-          on_stderr = function(...)
-            print(vim.inspect{'stderr', ...})
-          end,
-          on_exit = function()
-            require'fixity.display'.update_displays()
-          end,
-        }
-      )
-      vim.fn.jobwait({job}, 1000)
-    end
-  end;
-})
-
-function commands.construct(command, args, callback)
+local function construct(command, args, callback)
   return require'plenary.job':new{
     command = command,
     args = args,
@@ -99,15 +56,7 @@ function commands.construct(command, args, callback)
   }
 end
 
-function commands.send_it(command, args, callback)
-  commands.construct(
-    'git',
-    build_args(command, args),
-    callback
-  ):sync()
-end
-
-function commands.pop(command, args)
+local function pop(opts, command, args)
   local buf = vim.api.nvim_create_buf(false, true)
   local win = vim.api.nvim_open_win(buf, true, {
     relative = 'win',
@@ -122,6 +71,7 @@ function commands.pop(command, args)
       [[autocmd TermOpen <buffer=%s> startinsert!]],
       buf
   ))
+
   -- For some reason, setting the Normal highlight to itself will fix the
   -- background (this might be because my background is set to nil)
   vim.api.nvim_win_set_option(
@@ -137,10 +87,83 @@ function commands.pop(command, args)
         print(vim.inspect{'stderr', ...})
       end,
       on_exit = function()
-        require'fixity.display'.update_displays()
+        if opts.update then
+          require'fixity.display'.update_displays()
+        end
       end,
     }
   )
 end
+
+local function send_it(opts, command, args)
+  if not opts.silent then
+    return pop(opts, command, args)
+  end
+
+  local job = construct(
+    'git',
+    build_args(command, args),
+    opts.callback
+  )
+
+  job:start()
+
+  if opts.stdin then
+    job:send(opts.stdin)
+    job.stdin:close()
+  end
+
+  job:wait()
+
+  if opts.update then
+    require'fixity.display'.update_displays()
+  end
+end
+
+-- Some black magic
+local __options = {
+  update = function(t)
+    t.__options.update = true
+    return t
+  end,
+  silent = function(t)
+    t.__options.silent = true
+    return t
+  end,
+  callback = function(t)
+    return function(callback)
+      t.__options.callback = callback
+      return t
+    end
+  end,
+  stdin = function(t)
+    return function(data)
+      t.__options.stdin = data
+      return t
+    end
+  end,
+}
+
+local OptionsMaker = {
+  __index = function(t, k)
+    if __options[k] ~= nil then
+      return __options[k](t)
+    end
+
+    return function(args)
+      send_it(t.__options, k, args)
+    end
+  end
+}
+
+local commands = {}
+
+setmetatable(commands, {
+  __index = function(_, k)
+    local t = {__options = {}}
+    setmetatable(t, OptionsMaker)
+    return t[k]
+  end,
+})
 
 return commands

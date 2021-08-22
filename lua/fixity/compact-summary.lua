@@ -35,7 +35,19 @@ function CompactSummary:diff_file()
   local filename = self:find_filename()
 
   if filename ~= nil then
-    require'fixity.diff':send_it({'diff'}, {self.args, '--', filename})
+    -- A bit too hardcoded but works for now
+    local commit
+    if type(self.args) == 'table' then
+      commit = vim.tbl_filter(
+        function(a)
+          return a ~= '--compact-summary'
+        end,
+        self.args
+      )
+    else
+      commit = ''
+    end
+    require'fixity.diff':send_it('diff', {commit, '--', filename})
   else
     print'no file on the current line'
   end
@@ -45,8 +57,8 @@ CompactSummary.unstaged = CompactSummary:new{
   __module = 'compact-summary';
   __name = 'unstaged';
   keymaps = {
-    ['-'] = {func = commands.silent.add, args = {method = 'find_filename'}},
-    ['d'] = {func = commands.silent.checkout, args = {method = 'find_filename'}},
+    ['-'] = {func = commands.silent.update.add, args = {method = 'find_filename'}},
+    ['d'] = {func = commands.silent.update.checkout, args = {method = 'find_filename'}},
   },
 }
 
@@ -54,7 +66,7 @@ CompactSummary.staged = CompactSummary:new{
   __module = 'compact-summary';
   __name = 'staged';
   keymaps = {
-    ['-'] = {func = commands.silent.reset, args = {'--', {method = 'find_filename'}}},
+    ['-'] = {func = commands.silent.update.reset, args = {'--', {method = 'find_filename'}}},
   },
 }
 
