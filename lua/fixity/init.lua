@@ -21,6 +21,10 @@ M.dev_func = function()
       'diff',
       '--compact-summary'
     )
+    require'fixity.display'.untracked:send_it(
+      'ls-files',
+      {'--others', '--exclude-standard'}
+    )
   else
     Display.update_displays()
   end

@@ -1,4 +1,4 @@
-local function build_args(command, args)
+local function build_args(args)
   local function to_string(arg)
     if arg == nil then
       return {}
@@ -23,7 +23,7 @@ local function build_args(command, args)
     function(a)
       return #a > 0
     end,
-    vim.tbl_flatten({to_string(command), to_string(args)})
+    vim.tbl_flatten({to_string(args)})
   )
 end
 
@@ -81,7 +81,7 @@ local function pop(opts, command, args)
   )
 
   vim.fn.termopen(
-    build_args({'git', command}, args or {}),
+    build_args({command, args}),
     {
       on_stderr = function(...)
         print(vim.inspect{'stderr', ...})
@@ -96,13 +96,20 @@ local function pop(opts, command, args)
 end
 
 local function send_it(opts, command, args)
+  args = args or {}
+
+  if not opts.direct then
+    args = {command, args}
+    command = 'git'
+  end
+
   if not opts.silent then
     return pop(opts, command, args)
   end
 
   local job = construct(
-    'git',
-    build_args(command, args),
+    command,
+    build_args(args),
     opts.callback
   )
 
@@ -128,6 +135,10 @@ local __options = {
   end,
   silent = function(t)
     t.__options.silent = true
+    return t
+  end,
+  direct = function(t)
+    t.__options.direct = true
     return t
   end,
   callback = function(t)

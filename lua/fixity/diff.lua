@@ -68,13 +68,7 @@ function Diff:set_view()
     end
   end
 
-  vim.api.nvim_win_set_height(
-    win,
-    vim.fn.max{
-      vim.api.nvim_win_get_height(win),
-      hunk_size,
-    }
-  )
+  vim.api.nvim_win_set_height(win, #hunk.contents)
 
   vim.fn.winrestview{lnum = hunk.start, topline = hunk.start}
   vim.fn.search('^[-+]')
