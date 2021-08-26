@@ -131,7 +131,7 @@ function Display:set_view()
 end
 
 function Display:update()
-  commands.silent.callback(function(result)
+  commands.silent.schedule(function(result)
     self:set_content(result)
 
     if self.should_close then
@@ -249,7 +249,7 @@ function Display:set_highlights()
 end
 
 function Display:send_it(command, args)
-  commands.silent.callback(
+  commands.silent.schedule(
     function(result)
       self:new{command = command, args = args}:create_buf(result)
     end

@@ -22,13 +22,7 @@ local CompactSummary = require'fixity.display':new{
 }
 
 function CompactSummary:find_filename()
-  local filename = vim.api.nvim_get_current_line():match[[^%s(%S*)%s]]
-
-  if filename then
-    return string.format(':/%s', filename)
-  end
-
-  return nil
+  return vim.api.nvim_get_current_line():match[[^%s(%S*)%s]]
 end
 
 function CompactSummary:diff_file()

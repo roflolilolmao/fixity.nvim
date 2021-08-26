@@ -27,10 +27,11 @@ local function build_args(args)
   )
 end
 
-local function construct(command, args, callback)
+local function construct(opts, command, args)
   return require'plenary.job':new{
     command = command,
     args = args,
+    cwd = opts.cwd,
     on_stderr = function(...)
       print(vim.inspect{'stderr', ...})
     end,
@@ -43,17 +44,31 @@ local function construct(command, args, callback)
 
       local result = j:result()
 
-      if callback == nil then
-        callback = function(result)
-          print(vim.inspect{command, args}, 'returned', vim.inspect(result))
-        end
+      if opts.callback then
+        opts.callback(result)
       end
 
-      vim.schedule(function()
-        callback(result)
-      end)
+      if opts.schedule then
+        vim.schedule(function()
+          opts.schedule(result)
+        end)
+      end
     end,
   }
+end
+
+local function git_root()
+  local root
+  construct(
+    {
+      callback = function(result)
+        root = result[1]
+      end,
+    },
+    'git',
+    {'rev-parse', '--show-toplevel'}
+  ):sync()
+  return root
 end
 
 local function pop(opts, command, args)
@@ -98,6 +113,10 @@ end
 local function send_it(opts, command, args)
   args = args or {}
 
+  if not opts.cwd then
+    opts.cwd = git_root()
+  end
+
   if not opts.direct then
     args = {command, args}
     command = 'git'
@@ -108,9 +127,9 @@ local function send_it(opts, command, args)
   end
 
   local job = construct(
+    opts,
     command,
-    build_args(args),
-    opts.callback
+    build_args(args)
   )
 
   job:start()
@@ -140,6 +159,12 @@ local __options = {
   direct = function(t)
     t.__options.direct = true
     return t
+  end,
+  schedule = function(t)
+    return function(callback)
+      t.__options.schedule = callback
+      return t
+    end
   end,
   callback = function(t)
     return function(callback)
