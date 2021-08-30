@@ -25,7 +25,7 @@ local Log = require'fixity.display':new{
     syn match fxDecoration /(.\{-})/ contained contains=fxHead,fxBranch,fxOriginBranch
     syn match fxBranch "[-_/a-zA-Z]\+" contained
     syn match fxOriginBranch "origin\/[-_/a-zA-Z]\+" contained
-    syn match fxHead /HEAD ->/ contained
+    syn match fxHead /HEAD\( -> \)\?/ contained
   ]],
 }
 
@@ -42,7 +42,7 @@ function Log:find_commit()
 
   if decoration ~= nil then
     -- TODO: prioritize local branches
-    decoration = decoration:gsub('HEAD %-> ', '')
+    decoration = decoration:gsub('HEAD( %-> )', '')
     target = decoration:gsub([[,.*]], '')
   else
     target = commit
