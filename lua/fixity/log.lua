@@ -7,11 +7,13 @@ local Log = require'fixity.display':new{
 
     ['co'] = {func = commands.update.checkout, args = {method = 'find_commit'}};
 
-    ['d'] = {func = commands.update.branch, args = {'-d', {method = 'find_commit'}}};
+    ['d'] = {func = commands.update.branch, args = {'-d', {method = 'find_commit'}}},
     ['D'] = {func = commands.update.branch, args = {'-D', {method = 'find_commit'}}};
 
     ['rr'] = {func = commands.update.rebase, args = {method = 'find_commit'}},
     ['ri'] = {func = commands.update.rebase, args = {'--interactive', {method = 'find_commit'}}};
+
+    ['rs'] = {func = commands.update.reset, args = {method = 'find_commit'}};
   },
   split = 'topleft vsplit',
   syntax = [[

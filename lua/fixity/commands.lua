@@ -58,6 +58,8 @@ local function construct(opts, command, args)
 end
 
 local function git_root()
+  -- TODO: cache
+
   local root
   construct(
     {
@@ -110,15 +112,14 @@ local function pop(opts, command, args)
   )
 end
 
-local function send_it(opts, command, args)
-  args = args or {}
-
+local function send_it(opts, command, ...)
   if not opts.cwd then
     opts.cwd = git_root()
   end
 
+  args = ...
   if not opts.direct then
-    args = {command, args}
+    args = {command, ...}
     command = 'git'
   end
 
@@ -186,8 +187,8 @@ local OptionsMaker = {
       return __options[k](t)
     end
 
-    return function(args)
-      send_it(t.__options, k, args)
+    return function(...)
+      send_it(t.__options, k, ...)
     end
   end
 }

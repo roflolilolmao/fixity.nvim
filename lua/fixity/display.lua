@@ -201,7 +201,7 @@ function Display:set_map(lhs, rhs)
       error(string.format('Map error: unsupported %s[%s]', value, type(value)))
     end
 
-    return string.format('__displays[%s]%s{%s}', self.buf, call, args)
+    return string.format('__displays[%s]%s(%s)', self.buf, call, args)
   end
 
   local function build_map()

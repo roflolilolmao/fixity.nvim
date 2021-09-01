@@ -12,6 +12,7 @@ M.dev_func = function()
         '--graph',
         '--branches',
         '--remotes',
+        'HEAD',
       }
     )
     require'fixity.compact-summary'.staged:send_it(

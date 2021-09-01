@@ -2,6 +2,8 @@ local Diff = require'fixity.display':new{
   __module = 'diff';
   keymaps = {
     ['q'] = '<Cmd>bw<CR>',
+
+    -- TODO: this command should only exist for unstaged
     ['-'] = {method = 'stage_hunk'},
   },
   syntax = [[
