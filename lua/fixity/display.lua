@@ -232,17 +232,17 @@ end
 
 function Display:set_highlights()
   vim.cmd([[
-    hi! def link fxAdd DiffAdd
-    hi! def link fxDelete DiffDelete
+    hi! def link fixityAdd DiffAdd
+    hi! def link fixityDelete DiffDelete
 
-    hi! def link fxHunkHeader DiffChange
+    hi! def link fixityHunkHeader DiffChange
 
-    hi! def link fxCommit Label
+    hi! def link fixityCommit Label
 
-    hi! def link fxGraph Identifier
-    hi! def link fxHead Identifier
-    hi! def link fxBranch String
-    hi! def link fxRemoteBranch Character
+    hi! def link fixityGraph Identifier
+    hi! def link fixityHead Identifier
+    hi! def link fixityBranch String
+    hi! def link fixityRemoteBranch Character
 
     hi! fixityMatch gui=reverse
   ]])

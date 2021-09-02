@@ -20,14 +20,14 @@ local Log = require'fixity.display':new{
   syntax = [[
     syn clear
 
-    syn match fxLineStart /^[ *\/|]*\s*\x*\s*\((.\{-})\s\)\?/ contains=fxGraph,fxCommit,fxDecoration
+    syn match fixityLineStart /^[ *\/|]*\s*\x*\s*\((.\{-})\s\)\?/ contains=fixityGraph,fixityCommit,fixityDecoration
 
-    syn match fxGraph "[\/\\|]" contained
-    syn match fxCommit /\x\+/ contained
+    syn match fixityGraph "[\/\\|]" contained
+    syn match fixityCommit /\x\+/ contained
 
-    syn match fxDecoration /(.\{-})/ contained contains=fxHeadStart
-    syn match fxHeadStart /(HEAD\( -> \)\?/ contained contains=fxHead
-    syn match fxHead /HEAD\( -> \)\?/ contained
+    syn match fixityDecoration /(.\{-})/ contained contains=fixityHeadStart
+    syn match fixityHeadStart /(HEAD\( -> \)\?/ contained contains=fixityHead
+    syn match fixityHead /HEAD\( -> \)\?/ contained
   ]],
 }
 
@@ -57,9 +57,9 @@ function Log:postprocess()
     row, start = row - 1, start - 1
 
     if vim.tbl_contains(repo.branches, line) then
-      self:set_mark(row, start, end_, 'fxBranch')
+      self:set_mark(row, start, end_, 'fixityBranch')
     elseif vim.tbl_contains(repo.remote_branches, line) then
-      self:set_mark(row, start, end_, 'fxRemoteBranch')
+      self:set_mark(row, start, end_, 'fixityRemoteBranch')
     else
       self:set_mark(row, start, end_, 'luaError')
     end

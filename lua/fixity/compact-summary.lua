@@ -8,13 +8,13 @@ local CompactSummary = require'fixity.display':new{
   syntax = [[
     syn clear
 
-    syn match fxReference "\x\+\s(.*, .\{-})" contains=fxCommit
-    syn match fxCommit "^\x\+" contained
+    syn match fixityReference "\x\+\s(.*, .\{-})" contains=fixityCommit
+    syn match fixityCommit "^\x\+" contained
 
-    syn match fxFileChange "|\s\+\d\+\s[+-]*$" contains=fxAdd,fxDelete
+    syn match fixityFileChange "|\s\+\d\+\s[+-]*$" contains=fixityAdd,fixityDelete
 
-    syn match fxAdd /+/ contained
-    syn match fxDelete /-/ contained
+    syn match fixityAdd /+/ contained
+    syn match fixityDelete /-/ contained
   ]],
   options = {
     winfixheight = true,

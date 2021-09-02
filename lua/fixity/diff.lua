@@ -9,10 +9,10 @@ local Diff = require'fixity.display':new{
   syntax = [[
     syn clear
 
-    syn match fxAdd "^+.*$"
-    syn match fxDelete "^-.*$"
+    syn match fixityAdd "^+.*$"
+    syn match fixityDelete "^-.*$"
 
-    syn match fxHunkHeader "@@.*@@"
+    syn match fixityHunkHeader "@@.*@@"
   ]],
 }
 
