@@ -19,15 +19,9 @@ local Log = require'fixity.display':new{
   syntax = [[
     syn clear
 
-    syn match fxLineStart /^[ *\/|]*\s*\x*\s*\((.\{-})\s\)\?/ contains=fxGraph,fxCommit,fxDecoration
-
+    syn match fxLineStart /^[ *\/|]*\s*\x*\s*/ contains=fxGraph,fxCommit
     syn match fxGraph "[\/\\|]" contained
     syn match fxCommit /\x\+/ contained
-
-    syn match fxDecoration /(.\{-})/ contained contains=fxHead,fxBranch,fxOriginBranch
-    syn match fxBranch "[-_/a-zA-Z]\+" contained
-    syn match fxOriginBranch "origin\/[-_/a-zA-Z]\+" contained
-    syn match fxHead /HEAD\( -> \)\?/ contained
   ]],
 }
 
@@ -35,22 +29,53 @@ function Log:preprocess_lines(lines)
   return vim.tbl_map(function(line) return line:gsub('%s*$', '') end, lines)
 end
 
-function Log:find_commit()
-  local line = vim.api.nvim_get_current_line()
-  local commit, remainder = line:match[[^[ */\|]*%s*(%x*)%s*(.*)$]]
-  local decoration = remainder:match[[^%((.-)%)]]
+function Log:postprocess()
+  local decorated_line = vim.regex[[^[ *\/|]*\s*\x*\s*(.\{-})\s]]
+  local decoration = vim.regex[[(.\{-})]]
 
-  local target
-
-  if decoration ~= nil then
-    -- TODO: prioritize local branches
-    decoration = decoration:gsub('HEAD( %-> )', '')
-    target = decoration:gsub([[,.*]], '')
-  else
-    target = commit
+  local function set_mark(line, start, end_)
+    vim.api.nvim_buf_set_extmark(
+      self.buf,
+      self.namespace,
+      line - 1,
+      start + 1,
+      {
+        end_col = end_ - 1,
+        hl_group = 'fxBranch',
+      }
+    )
   end
 
-  return target
+  for i, line in ipairs(vim.api.nvim_buf_get_lines(self.buf, 0, -1, false)) do
+    local start, end_, found
+
+    if decorated_line:match_str(line) then
+      start, end_ = decoration:match_str(line)
+      repeat
+        found = line:find(', ', start + 1, true) or end_
+        set_mark(i, start, found)
+        start = found
+      until found == end_
+    end
+  end
+end
+
+function Log:find_commit()
+  return vim.api.nvim_get_current_line():match[[^[ */\|]*%s*(%x*)%s*.*$]]
+end
+
+function Log:find_decorations()
+  local commit, remainder = vim.api.nvim_get_current_line():match[[^[ */\|]*%s*(%x*)%s*(.*)$]]
+  local decorations = remainder:match[[^%((.-)%)]]
+
+  if decorations == nil then
+    return {}
+  end
+
+  decorations = decorations:gsub('HEAD %-> ', '')
+  decorations = vim.split(decorations, ', ')
+  -- TODO: prioritize local branches
+  return decorations
 end
 
 function Log:compact_summary()

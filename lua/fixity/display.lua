@@ -86,6 +86,7 @@ function Display:create_buf(lines)
       self.buf, self.buf
   ))
   vim.api.nvim_buf_set_option(self.buf, 'bufhidden', 'wipe')
+  self.namespace = vim.api.nvim_create_namespace''
 
   vim.cmd(self.split)
 
@@ -116,6 +117,10 @@ function Display:set_content(lines)
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', true)
   vim.api.nvim_buf_set_lines(self.buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', false)
+
+  if self.postprocess then
+    lines = self:postprocess()
+  end
 end
 
 function Display:set_view()
