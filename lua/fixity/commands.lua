@@ -57,22 +57,6 @@ local function construct(opts, command, args)
   }
 end
 
-local function git_root()
-  -- TODO: cache
-
-  local root
-  construct(
-    {
-      callback = function(result)
-        root = result[1]
-      end,
-    },
-    'git',
-    {'rev-parse', '--show-toplevel'}
-  ):sync()
-  return root
-end
-
 local function pop(opts, command, args)
   local buf = vim.api.nvim_create_buf(false, true)
   local win = vim.api.nvim_open_win(buf, true, {
@@ -114,7 +98,7 @@ end
 
 local function send_it(opts, command, ...)
   if not opts.cwd then
-    opts.cwd = git_root()
+    opts.cwd = require'fixity.repo'.root
   end
 
   args = ...
@@ -148,37 +132,31 @@ local function send_it(opts, command, ...)
 end
 
 -- Some black magic
+local function bool(name)
+  return function(t)
+    t.__options[name] = true
+    return t
+  end
+end
+
+local function setter(name)
+  return function(t)
+    return function(value)
+      t.__options[name] = value
+      return t
+    end
+  end
+end
+
 local __options = {
-  update = function(t)
-    t.__options.update = true
-    return t
-  end,
-  silent = function(t)
-    t.__options.silent = true
-    return t
-  end,
-  direct = function(t)
-    t.__options.direct = true
-    return t
-  end,
-  schedule = function(t)
-    return function(callback)
-      t.__options.schedule = callback
-      return t
-    end
-  end,
-  callback = function(t)
-    return function(callback)
-      t.__options.callback = callback
-      return t
-    end
-  end,
-  stdin = function(t)
-    return function(data)
-      t.__options.stdin = data
-      return t
-    end
-  end,
+  direct = bool'direct',
+  silent = bool'silent',
+  update = bool'update';
+
+  callback = setter'callback',
+  cwd = setter'cwd',
+  schedule = setter'schedule',
+  stdin = setter'stdin';
 }
 
 local OptionsMaker = {
