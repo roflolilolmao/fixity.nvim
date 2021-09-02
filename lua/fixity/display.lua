@@ -10,6 +10,7 @@ end
 
 local Display = {
   __module = 'display';
+  namespace = vim.api.nvim_create_namespace'fixity',
   keymaps = {
     ['n'] = {method = 'next'},
     ['p'] = {method = 'previous'},
@@ -27,6 +28,7 @@ local Display = {
   },
   split = 'leftabove split',
   options = {},
+  funcs = {},
 }
 Display.__index = Display
 
@@ -86,7 +88,6 @@ function Display:create_buf(lines)
       self.buf, self.buf
   ))
   vim.api.nvim_buf_set_option(self.buf, 'bufhidden', 'wipe')
-  self.namespace = vim.api.nvim_create_namespace''
 
   vim.cmd(self.split)
 
@@ -101,25 +102,25 @@ function Display:create_buf(lines)
   self:set_view()
 end
 
-function Display:set_content(lines)
-  local command = {self.command, {self.args}}
-  self.buffer_header = {table.concat(vim.tbl_flatten(command), ' '), ''}
+function Display:set_content(content)
+  vim.api.nvim_buf_clear_namespace(self.buf, self.namespace, 0, -1)
+
+  self.buffer_header = {
+    table.concat(vim.tbl_flatten({self.command, {self.args}}), ' '),
+    ''
+  }
 
   if self.preprocess_lines then
-    lines = self:preprocess_lines(lines)
+    content = self:preprocess_lines(content)
   end
 
-  lines = vim.list_extend(
-    vim.fn.deepcopy(self.buffer_header),
-    lines
-  )
-
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', true)
-  vim.api.nvim_buf_set_lines(self.buf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_lines(self.buf, 0, -1, false, self.buffer_header)
+  vim.api.nvim_buf_set_lines(self.buf, -1, -1, false, content)
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', false)
 
   if self.postprocess then
-    lines = self:postprocess()
+    self:postprocess()
   end
 end
 
@@ -157,7 +158,7 @@ function Display:update()
   end)[self.command](self.args)
 end
 
-function Display:set_map(lhs, rhs)
+function Display:build_command(rhs)
   local function build(value)
     local function build_args(args)
       local function build_arg(arg)
@@ -176,9 +177,6 @@ function Display:set_map(lhs, rhs)
     end
 
     local function func_(func)
-      if not self.funcs then
-        self.funcs = {}
-      end
       self.funcs[#self.funcs+1] = func
       return string.format('.funcs[%s]', #self.funcs)
     end
@@ -194,12 +192,15 @@ function Display:set_map(lhs, rhs)
     local call
     local args = ''
     if type(value) == 'table' then
+      args = build_args(value.args)
+
       if value.method then
         call = method_(value.method)
       elseif value.func then
         call = func_(value.func)
+      else
+        error(string.format('Map error: missing func or method in %s', value))
       end
-      args = build_args(value.args)
     elseif type(value) == 'function' then
       call = func_(value)
     else
@@ -209,25 +210,17 @@ function Display:set_map(lhs, rhs)
     return string.format('__displays[%s]%s(%s)', self.buf, call, args)
   end
 
-  local function build_map()
-    if type(rhs) == 'string' then
-      return rhs
-    end
-    return string.format('<Cmd>lua %s<CR>', build(rhs))
+  if type(rhs) ~= 'string' then
+    rhs = string.format('lua %s', build(rhs))
   end
 
-  vim.api.nvim_buf_set_keymap(
-    self.buf,
-    'n',
-    lhs,
-    build_map(),
-    {}
-  )
+  return rhs
 end
 
 function Display:set_keymaps()
   for lhs, rhs in pairs(self.keymaps) do
-    self:set_map(lhs, rhs)
+    rhs = string.format('<Cmd>%s<CR>', self:build_command(rhs))
+    vim.api.nvim_buf_set_keymap(self.buf, 'n', lhs, rhs, {})
   end
 end
 
@@ -250,6 +243,8 @@ function Display:set_highlights()
     hi! def link fxHead Identifier
     hi! def link fxBranch String
     hi! def link fxRemoteBranch Character
+
+    hi! fixityMatch gui=reverse
   ]])
 end
 
