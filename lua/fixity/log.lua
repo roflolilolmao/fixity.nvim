@@ -1,4 +1,5 @@
 local commands = require'fixity.commands'
+local repo = require'fixity.repo'
 
 local Log = require'fixity.display':new{
   __module = 'log';
@@ -19,9 +20,13 @@ local Log = require'fixity.display':new{
   syntax = [[
     syn clear
 
-    syn match fxLineStart /^[ *\/|]*\s*\x*\s*/ contains=fxGraph,fxCommit
+    syn match fxLineStart /^[ *\/|]*\s*\x*\s*\((.\{-})\s\)\?/ contains=fxGraph,fxCommit,fxDecoration
+
     syn match fxGraph "[\/\\|]" contained
     syn match fxCommit /\x\+/ contained
+
+    syn match fxDecoration /(.\{-})/ contained contains=fxHead
+    syn match fxHead /HEAD\( -> \)\?/ contained
   ]],
 }
 
@@ -33,17 +38,35 @@ function Log:postprocess()
   local decorated_line = vim.regex[[^[ *\/|]*\s*\x*\s*(.\{-})\s]]
   local decoration = vim.regex[[(.\{-})]]
 
-  local function set_mark(line, start, end_)
+  local function set_mark(i, start, end_, hl_group)
     vim.api.nvim_buf_set_extmark(
       self.buf,
       self.namespace,
-      line - 1,
-      start + 1,
+      i - 1,
+      start - 1,
       {
-        end_col = end_ - 1,
-        hl_group = 'fxBranch',
+        end_col = end_,
+        hl_group = hl_group,
       }
     )
+  end
+
+  local function process_mark(i, line, start, end_)
+    line = line:sub(start, end_)
+
+    local found = line:find(' %-> ')
+    if found then
+      start = start + found + 3
+      line = line:gsub('.* -> ', '')
+    end
+
+    if vim.tbl_contains(repo.branches, line) then
+      set_mark(i, start, end_, 'fxBranch')
+    elseif vim.tbl_contains(repo.remote_branches, line) then
+      set_mark(i, start, end_, 'fxRemoteBranch')
+    else
+      set_mark(i, start, end_, 'luaError')
+    end
   end
 
   for i, line in ipairs(vim.api.nvim_buf_get_lines(self.buf, 0, -1, false)) do
@@ -53,7 +76,7 @@ function Log:postprocess()
       start, end_ = decoration:match_str(line)
       repeat
         found = line:find(', ', start + 1, true) or end_
-        set_mark(i, start, found)
+        process_mark(i, line, start + 2, found - 1)
         start = found
       until found == end_
     end

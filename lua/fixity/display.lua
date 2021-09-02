@@ -249,7 +249,7 @@ function Display:set_highlights()
     hi! def link fxGraph Identifier
     hi! def link fxHead Identifier
     hi! def link fxBranch String
-    hi! def link fxOriginBranch Character
+    hi! def link fxRemoteBranch Character
   ]])
 end
 
