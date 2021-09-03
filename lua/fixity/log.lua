@@ -39,7 +39,7 @@ function Log:postprocess()
   self:set_highlight_mark()
   vim.cmd(string.format(
       [[autocmd CursorMoved <buffer=%s> %s]],
-      self.buf, self:build_command({method = 'highlight_current_decoration'})
+      self.buf, self:build_command{method = 'highlight_current_decoration'}
   ))
 
   local decorated_line = vim.regex[[^[ *\/|]*\s*\x*\s*(.\{-})\s]]
@@ -174,16 +174,12 @@ function Log:find_decoration()
   return line:sub(start + 1, end_)
 end
 
-
 function Log:compact_summary()
   local commit = self:find_commit()
-  require'fixity.compact-summary':send_it(
-    'diff',
-    {
-      '--compact-summary',
-      string.format('%s^..%s', commit, commit)
-    }
-  )
+  require'fixity.compact-summary':send_it('diff', {
+    '--compact-summary',
+    string.format('%s^..%s', commit, commit),
+  })
 end
 
 return Log

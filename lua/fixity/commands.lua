@@ -12,11 +12,7 @@ local function build_args(args)
       return arg
     end
 
-    error(string.format(
-      'unimplemented for %s of type %s',
-      arg,
-      type(arg)
-    ))
+    error(string.format('unimplemented for %s of type %s', arg, type(arg)))
   end
 
   return vim.tbl_filter(
@@ -68,10 +64,7 @@ local function pop(opts, command, args)
     border = 'rounded',
     style = 'minimal',
   })
-  vim.cmd(string.format(
-      [[autocmd TermOpen <buffer=%s> startinsert!]],
-      buf
-  ))
+  vim.cmd(string.format([[autocmd TermOpen <buffer=%s> startinsert!]], buf))
 
   -- For some reason, setting the Normal highlight to itself will fix the
   -- background (this might be because my background is set to nil)
@@ -81,19 +74,16 @@ local function pop(opts, command, args)
     'Normal:Normal,FloatBorder:Title'
   )
 
-  vim.fn.termopen(
-    build_args({command, args}),
-    {
-      on_stderr = function(...)
-        print(vim.inspect{'stderr', ...})
-      end,
-      on_exit = function()
-        if opts.update then
-          require'fixity.display'.update_displays()
-        end
-      end,
-    }
-  )
+  vim.fn.termopen(build_args({command, args}), {
+    on_stderr = function(...)
+      print(vim.inspect{'stderr', ...})
+    end,
+    on_exit = function()
+      if opts.update then
+        require'fixity.display'.update_displays()
+      end
+    end,
+  })
 end
 
 local function send_it(opts, command, ...)
@@ -101,7 +91,7 @@ local function send_it(opts, command, ...)
     opts.cwd = require'fixity.repo'.root
   end
 
-  args = ...
+  local args = ...
   if not opts.direct then
     args = {command, ...}
     command = 'git'
@@ -111,12 +101,7 @@ local function send_it(opts, command, ...)
     return pop(opts, command, args)
   end
 
-  local job = construct(
-    opts,
-    command,
-    build_args(args)
-  )
-
+  local job = construct(opts, command, build_args(args))
   job:start()
 
   if opts.stdin then

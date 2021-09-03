@@ -2,7 +2,7 @@ local commands = require'fixity.commands'
 
 __displays = __displays or {}
 
-local function close()
+local function close_all()
   for buf, _ in pairs(__displays) do
     vim.api.nvim_buf_delete(buf, {})
   end
@@ -15,7 +15,7 @@ local Display = {
     ['n'] = {method = 'next'},
     ['p'] = {method = 'previous'},
 
-    ['q'] = close;
+    ['q'] = close_all;
 
     ['f'] = {func = commands.update.fetch, args = {'--all', '--prune'}},
 
