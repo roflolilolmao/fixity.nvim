@@ -15,7 +15,8 @@ local Display = {
     ['n'] = {method = 'next'},
     ['p'] = {method = 'previous'},
 
-    ['q'] = close_all;
+    ['q'] = 'bwipe';
+    ['<Esc>'] = close_all;
 
     ['f'] = {func = commands.update.fetch, args = {'--all', '--prune'}},
 

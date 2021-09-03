@@ -65,26 +65,21 @@ function Log:postprocess()
     end
   end
 
-  for row, line in ipairs(vim.api.nvim_buf_get_lines(self.buf, 0, -1, false)) do
+  local offset = #self.buffer_header
+  local lines = vim.api.nvim_buf_get_lines(self.buf, offset, -1, false)
+
+  for row, line in ipairs(lines) do
     local start, end_, found
 
     if decorated_line:match_str(line) then
       start, end_ = decoration:match_str(line)
       repeat
         found = line:find(', ', start + 1, true) or end_
-        process_mark(row, line, start + 2, found - 1)
+        process_mark(row + offset, line, start + 2, found - 1)
         start = found
       until found == end_
     end
   end
-end
-
-function Log:next()
-  self:jump(0, -1, 1)
-end
-
-function Log:previous()
-  self:jump(-1, 0, -1)
 end
 
 function Log:jump(start_search, end_search, col_offset)
@@ -111,6 +106,14 @@ function Log:jump(start_search, end_search, col_offset)
 
   row, col = result[2], result[3]
   vim.api.nvim_win_set_cursor(win, {row + 1, col})
+end
+
+function Log:next()
+  self:jump(0, -1, 1)
+end
+
+function Log:previous()
+  self:jump(-1, 0, -1)
 end
 
 function Log:set_mark(row, start, end_, hl_group, opts)
