@@ -22,6 +22,7 @@ local CompactSummary = require'fixity.display':new{
 }
 
 function CompactSummary:find_filename()
+  -- TODO: use set_marks instead
   return vim.api.nvim_get_current_line():match[[^%s(%S*)%s]]
 end
 

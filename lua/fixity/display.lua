@@ -10,10 +10,9 @@ end
 
 local Display = {
   __module = 'display';
-  namespace = vim.api.nvim_create_namespace'fixity',
   keymaps = {
-    ['n'] = {method = 'next'},
-    ['p'] = {method = 'previous'},
+    ['n'] = {method = 'jump_to_next'},
+    ['p'] = {method = 'jump_to_previous'},
 
     ['q'] = 'bwipe';
     ['<Esc>'] = close_all;
@@ -29,8 +28,10 @@ local Display = {
   },
   split = 'leftabove split',
   options = {},
-  funcs = {},
 }
+
+Display = vim.tbl_extend('force', Display, require'fixity.marks')
+
 Display.__index = Display
 
 function Display.update_displays()
@@ -62,13 +63,13 @@ function Display:new(table)
   setmetatable(instance, self)
   instance.__index = instance
 
-  if type(table) == 'table' then
-    for k, v in pairs(table) do
-      if type(v) == 'table' then
-        instance[k] = vim.tbl_extend('force', instance[k] or {}, v)
-      else
-        instance[k] = v
-      end
+  instance.funcs = {}
+
+  for k, v in pairs(table) do
+    if type(v) == 'table' then
+      instance[k] = vim.tbl_extend('error', instance[k] or {}, v)
+    else
+      instance[k] = v
     end
   end
 
@@ -104,7 +105,7 @@ function Display:create_buf(lines)
 end
 
 function Display:set_content(content)
-  vim.api.nvim_buf_clear_namespace(self.buf, self.namespace, 0, -1)
+  self:clear_namespace()
 
   self.buffer_header = {
     table.concat(vim.tbl_flatten({self.command, {self.args}}), ' '),
@@ -120,12 +121,10 @@ function Display:set_content(content)
   vim.api.nvim_buf_set_lines(self.buf, -1, -1, false, content)
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', false)
 
-  if self.postprocess then
-    self:postprocess()
-  end
+  self:set_marks()
 end
 
-function Display:set_view()
+function Display:set_view(_)
   local win = vim.fn.bufwinid(self.buf)
 
   if win > 0 and self.options.winfixheight then
@@ -133,8 +132,6 @@ function Display:set_view()
     vim.api.nvim_win_set_option(win, 'winfixheight', true)
     vim.fn.win_execute(win, [[call winrestview({'topline': 1})]])
   end
-
-  vim.fn.winrestview{lnum = #self.buffer_header + 1}
 end
 
 function Display:update()
@@ -255,24 +252,6 @@ function Display:send_it(command, args)
       self:new{command = command, args = args}:create_buf(result)
     end
   )[command](args)
-end
-
-function Display:next()
-  local win = vim.fn.bufwinid(self.buf)
-  local row, col = unpack(vim.api.nvim_win_get_cursor(win))
-
-  if row < vim.fn.line('$') then
-    vim.api.nvim_win_set_cursor(win, {row + 1, col})
-  end
-end
-
-function Display:previous()
-  local win = vim.fn.bufwinid(self.buf)
-  local row, col = unpack(vim.api.nvim_win_get_cursor(win))
-
-  if row > #self.buffer_header + 1 then
-    vim.api.nvim_win_set_cursor(win, {row - 1, col})
-  end
 end
 
 Display.untracked = Display:new{

@@ -14,105 +14,88 @@ local Diff = require'fixity.display':new{
   ]],
 }
 
-function Diff:postprocess()
-  local hunk_header = '^@@.-@@'
-  local hunks
+function Diff:set_marks()
+  local hunk_header = vim.regex[[^@@.\+@@]]
 
   local offset = #self.buffer_header
   local lines = vim.api.nvim_buf_get_lines(self.buf, offset, -1, false)
 
-  for i, line in ipairs(lines) do
-    if line:match(hunk_header) then
-      self.header = vim.list_slice(lines, 0, i - 1)
+  self.header = {}
+
+  for row, line in ipairs(lines) do
+    if hunk_header:match_str(line) then
+      self.header = vim.list_slice(lines, 0, row - 1)
       break
     end
   end
 
-  offset = #self.header + #self.buffer_header
-  lines = vim.api.nvim_buf_get_lines(self.buf, offset, -1, false)
-
-  self.line_to_hunk = {}
-  self.hunks = {}
-
-  for i, line in ipairs(lines) do
-    if line:match(hunk_header) then
-      self.hunks[#self.hunks+1] = {start = i + offset, contents = {line}}
-    else
-      local contents = self.hunks[#self.hunks].contents
-      contents[#contents+1] = line
-    end
-
-    self.line_to_hunk[#self.line_to_hunk+1] = self.hunks[#self.hunks]
+  if vim.tbl_isempty(self.header) then
+    return
   end
 
-  vim.tbl_add_reverse_lookup(self.hunks)
+  offset = #self.header + #self.buffer_header
+  lines = vim.api.nvim_buf_get_lines(self.buf, offset + 1, -1, false)
+
+  local start = offset
+
+  for row, line in ipairs(lines) do
+    if hunk_header:match_str(line) then
+      self:set_mark(
+        {row = start, col = 0},
+        {row = row + offset - 1, col = #lines[row - 1]}
+      )
+      start = row + offset
+    end
+  end
+
+  self:set_mark(
+    {row = start, col = 0},
+    {row = #lines + offset, col = #lines[#lines]}
+  )
 end
 
-function Diff:set_view()
-  local win = vim.fn.bufwinid(self.buf)
-  local hunk = self:find_hunk()
+function Diff:set_view(mark)
+  if mark == nil then
+    mark = self.marks[1]
 
-  if hunk == nil then
-    hunk = self.hunks[1]
-
-    if hunk == nil then
+    if mark == nil then
       return
     end
   end
 
-  vim.api.nvim_win_set_height(win, #hunk.contents)
-  vim.fn.winrestview{lnum = hunk.start, topline = hunk.start}
-  vim.fn.search('^[-+]')
+  local win = vim.fn.bufwinid(self.buf)
+  vim.api.nvim_win_set_height(win, #mark:contents())
+
+  -- + 5 offset: 1 for the hunk header, 3 for the context lines, 1 because it
+  -- is 0-based.
+  -- TODO: Actually use the context lines. Right now, on a diff at the top of
+  -- the file, this will not put the cursor at the correct place.
+  vim.fn.winrestview{lnum = mark.start.row + 5, topline = mark.start.row + 1}
 end
 
 function Diff:should_close()
-  return vim.tbl_isempty(self.hunks, {})
+  return vim.tbl_isempty(self.marks, {})
 end
 
-function Diff:next()
-  local index = self.hunks[self:find_hunk()]
-
-  if index == nil or index >= #self.hunks then
-    index = 0
-  end
-
-  self:jump_to_hunk(index + 1)
-end
-
-function Diff:previous()
-  local index = self.hunks[self:find_hunk()]
-
-  if index == nil or index <= 1 then
-    index = #self.hunks + 1
-  end
-
-  self:jump_to_hunk(index - 1)
-end
-
-function Diff:jump_to_hunk(index)
-  local win = vim.fn.bufwinid(self.buf)
-  local col = vim.api.nvim_win_get_cursor(win)[2]
-
-  vim.api.nvim_win_set_cursor(win, {self.hunks[index].start, col})
-
-  self:set_view()
-end
-
-function Diff:find_hunk()
-  local row = vim.api.nvim_win_get_cursor(vim.fn.bufwinid(self.buf))[1]
-  local lnum = row - #self.header - #self.buffer_header
-  return self.line_to_hunk[lnum]
-end
-
-function Diff:patch(hunk)
-  return table.concat(vim.tbl_flatten{self.header, hunk.contents, ''}, '\n')
+function Diff:patch(mark)
+  return table.concat(vim.tbl_flatten{
+    self.header,
+    mark:contents(),
+    '',
+  }, '\n')
 end
 
 function Diff:stage_hunk()
+  local mark = self:get_cursor_mark()
+
+  if not mark then
+    return
+  end
+
   require'fixity.commands'
     .silent
     .update
-    .stdin(self:patch(self:find_hunk()))
+    .stdin(self:patch(mark))
     .apply{'--cached', '-'};
 end
 
