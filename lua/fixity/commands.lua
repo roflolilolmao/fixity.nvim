@@ -5,7 +5,7 @@ local function build_args(args)
     end
 
     if type(arg) == 'string' then
-      return {arg}
+      return { arg }
     end
 
     if type(arg) == 'table' then
@@ -19,21 +19,23 @@ local function build_args(args)
     function(a)
       return #a > 0
     end,
-    vim.tbl_flatten({to_string(args)})
+    vim.tbl_flatten {
+      to_string(args),
+    }
   )
 end
 
 local function construct(opts, command, args)
-  return require'plenary.job':new{
+  return require('plenary.job'):new {
     command = command,
     args = args,
     cwd = opts.cwd,
     on_stderr = function(...)
-      print(vim.inspect{'stderr', ...})
+      print(vim.inspect { 'stderr', ... })
     end,
     on_exit = function(j, return_val)
       if return_val ~= 0 then
-        print(vim.inspect{command, args}, 'returned', return_val)
+        print(vim.inspect { command, args }, 'returned', return_val)
         print(vim.inspect(j:stderr_result()))
         return
       end
@@ -74,13 +76,13 @@ local function pop(opts, command, args)
     'Normal:Normal,FloatBorder:Title'
   )
 
-  vim.fn.termopen(build_args({command, args}), {
+  vim.fn.termopen(build_args { command, args }, {
     on_stderr = function(...)
-      print(vim.inspect{'stderr', ...})
+      print(vim.inspect { 'stderr', ... })
     end,
     on_exit = function()
       if opts.update then
-        require'fixity.display'.update_displays()
+        require('fixity.display').update_displays()
       end
     end,
   })
@@ -88,12 +90,12 @@ end
 
 local function send_it(opts, command, ...)
   if not opts.cwd then
-    opts.cwd = require'fixity.repo'.root
+    opts.cwd = require('fixity.repo').root
   end
 
   local args = ...
   if not opts.direct then
-    args = {command, ...}
+    args = { command, ... }
     command = 'git'
   end
 
@@ -112,7 +114,7 @@ local function send_it(opts, command, ...)
   job:wait()
 
   if opts.update then
-    require'fixity.display'.update_displays()
+    require('fixity.display').update_displays()
   end
 end
 
@@ -134,14 +136,14 @@ local function setter(name)
 end
 
 local __options = {
-  direct = bool'direct',
-  silent = bool'silent',
-  update = bool'update';
+  direct = bool 'direct',
+  silent = bool 'silent',
+  update = bool 'update',
 
-  callback = setter'callback',
-  cwd = setter'cwd',
-  schedule = setter'schedule',
-  stdin = setter'stdin';
+  callback = setter 'callback',
+  cwd = setter 'cwd',
+  schedule = setter 'schedule',
+  stdin = setter 'stdin',
 }
 
 local OptionsMaker = {
@@ -153,14 +155,14 @@ local OptionsMaker = {
     return function(...)
       send_it(t.__options, k, ...)
     end
-  end
+  end,
 }
 
 local commands = {}
 
 setmetatable(commands, {
   __index = function(_, k)
-    local t = {__options = {}}
+    local t = { __options = {} }
     setmetatable(t, OptionsMaker)
     return t[k]
   end,

@@ -1,4 +1,4 @@
-local commands = require'fixity.commands'
+local commands = require 'fixity.commands'
 
 __displays = __displays or {}
 
@@ -9,28 +9,28 @@ local function close_all()
 end
 
 local Display = {
-  __module = 'display';
+  __module = 'display',
   keymaps = {
-    ['n'] = {method = 'jump_to_next'},
-    ['p'] = {method = 'jump_to_previous'},
+    ['n'] = { method = 'jump_to_next' },
+    ['p'] = { method = 'jump_to_previous' },
 
-    ['q'] = 'bwipe';
-    ['<Esc>'] = close_all;
+    ['q'] = 'bwipe',
+    ['<Esc>'] = close_all,
 
-    ['f'] = {func = commands.update.fetch, args = {'--all', '--prune'}},
+    ['f'] = { func = commands.update.fetch, args = { '--all', '--prune' } },
 
     ['cc'] = commands.update.commit,
-    ['ca'] = {func = commands.update.commit, args = {'--amend'}},
-    ['ce'] = {func = commands.update.commit, args = {'--amend', '--no-edit'}};
+    ['ca'] = { func = commands.update.commit, args = { '--amend' } },
+    ['ce'] = { func = commands.update.commit, args = { '--amend', '--no-edit' } },
 
     ['xp'] = commands.update.push,
-    ['xPF'] = {func = commands.update.push, args = {'--force'}};
+    ['xPF'] = { func = commands.update.push, args = { '--force' } },
   },
   split = 'leftabove split',
   options = {},
 }
 
-Display = vim.tbl_extend('force', Display, require'fixity.marks')
+Display = vim.tbl_extend('force', Display, require 'fixity.marks')
 
 Display.__index = Display
 
@@ -38,7 +38,7 @@ function Display.update_displays()
   local function update(display)
     -- DEV: only `display:update` should be called
     local module = string.format('fixity.%s', display.__module)
-    require'plenary.reload'.reload_module(module, true)
+    require('plenary.reload').reload_module(module, true)
     module = require(module)
 
     if display.__name then
@@ -85,10 +85,13 @@ function Display:create_buf(lines)
   end
 
   table.insert(__displays, self.buf, self)
-  vim.cmd(string.format(
+  vim.cmd(
+    string.format(
       [[autocmd BufUnload <buffer=%s> lua __displays[%s] = nil]],
-      self.buf, self.buf
-  ))
+      self.buf,
+      self.buf
+    )
+  )
   vim.api.nvim_buf_set_option(self.buf, 'bufhidden', 'wipe')
 
   vim.cmd(self.split)
@@ -108,8 +111,8 @@ function Display:set_content(content)
   self:clear_namespace()
 
   self.buffer_header = {
-    table.concat(vim.tbl_flatten({self.command, {self.args}}), ' '),
-    ''
+    table.concat(vim.tbl_flatten { self.command, { self.args } }, ' '),
+    '',
   }
 
   if self.preprocess_lines then
@@ -167,7 +170,7 @@ function Display:build_command(rhs)
       end
 
       if not vim.tbl_islist(args) then
-        args = {args}
+        args = { args }
       end
 
       args = vim.tbl_map(build_arg, args or {})
@@ -175,7 +178,7 @@ function Display:build_command(rhs)
     end
 
     local function func_(func)
-      self.funcs[#self.funcs+1] = func
+      self.funcs[#self.funcs + 1] = func
       return string.format('.funcs[%s]', #self.funcs)
     end
 
@@ -229,7 +232,7 @@ function Display:set_syntax()
 end
 
 function Display:set_highlights()
-  vim.cmd([[
+  vim.cmd [[
     hi! def link fixityAdd DiffAdd
     hi! def link fixityDelete DiffDelete
 
@@ -243,23 +246,27 @@ function Display:set_highlights()
     hi! def link fixityRemoteBranch Character
 
     hi! fixityMatch gui=reverse
-  ]])
+  ]]
 end
 
 function Display:send_it(command, args)
-  commands.silent.schedule(
-    function(result)
-      self:new{command = command, args = args}:create_buf(result)
-    end
-  )[command](args)
+  commands.silent.schedule(function(result)
+    self:new({ command = command, args = args }):create_buf(result)
+  end)[command](args)
 end
 
-Display.untracked = Display:new{
+Display.untracked = Display:new {
   __module = 'display',
-  __name = 'untracked';
+  __name = 'untracked',
   keymaps = {
-    ['-'] = {func = commands.silent.update.add, args = {method = 'find_filename'}},
-    ['d'] = {func = commands.silent.update.direct.rm, args = {method = 'find_filename'}},
+    ['-'] = {
+      func = commands.silent.update.add,
+      args = { method = 'find_filename' },
+    },
+    ['d'] = {
+      func = commands.silent.update.direct.rm,
+      args = { method = 'find_filename' },
+    },
   },
   options = {
     winfixheight = true,
@@ -267,7 +274,7 @@ Display.untracked = Display:new{
 }
 
 function Display.untracked:find_filename()
-  return vim.api.nvim_get_current_line():match[[^(%S*)$]]
+  return vim.api.nvim_get_current_line():match [[^(%S*)$]]
 end
 
 return Display

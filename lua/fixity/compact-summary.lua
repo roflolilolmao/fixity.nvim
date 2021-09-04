@@ -1,9 +1,9 @@
-local commands = require'fixity.commands'
+local commands = require 'fixity.commands'
 
-local CompactSummary = require'fixity.display':new{
-  __module = 'compact-summary';
+local CompactSummary = require('fixity.display'):new {
+  __module = 'compact-summary',
   keymaps = {
-    ['o'] =  {method = 'diff_file'};
+    ['o'] = { method = 'diff_file' },
   },
   syntax = [[
     syn clear
@@ -23,7 +23,7 @@ local CompactSummary = require'fixity.display':new{
 
 function CompactSummary:find_filename()
   -- TODO: use set_marks instead
-  return vim.api.nvim_get_current_line():match[[^%s(%S*)%s]]
+  return vim.api.nvim_get_current_line():match [[^%s(%S*)%s]]
 end
 
 function CompactSummary:diff_file()
@@ -33,35 +33,41 @@ function CompactSummary:diff_file()
     -- A bit too hardcoded but works for now
     local commit
     if type(self.args) == 'table' then
-      commit = vim.tbl_filter(
-        function(a)
-          return a ~= '--compact-summary'
-        end,
-        self.args
-      )
+      commit = vim.tbl_filter(function(a)
+        return a ~= '--compact-summary'
+      end, self.args)
     else
       commit = ''
     end
-    require'fixity.diff':send_it('diff', {commit, '--', filename})
+    require('fixity.diff'):send_it('diff', { commit, '--', filename })
   else
-    print'no file on the current line'
+    print 'no file on the current line'
   end
 end
 
-CompactSummary.unstaged = CompactSummary:new{
-  __module = 'compact-summary';
-  __name = 'unstaged';
+CompactSummary.unstaged = CompactSummary:new {
+  __module = 'compact-summary',
+  __name = 'unstaged',
   keymaps = {
-    ['-'] = {func = commands.silent.update.add, args = {method = 'find_filename'}},
-    ['d'] = {func = commands.silent.update.checkout, args = {method = 'find_filename'}},
+    ['-'] = {
+      func = commands.silent.update.add,
+      args = { method = 'find_filename' },
+    },
+    ['d'] = {
+      func = commands.silent.update.checkout,
+      args = { method = 'find_filename' },
+    },
   },
 }
 
-CompactSummary.staged = CompactSummary:new{
-  __module = 'compact-summary';
-  __name = 'staged';
+CompactSummary.staged = CompactSummary:new {
+  __module = 'compact-summary',
+  __name = 'staged',
   keymaps = {
-    ['-'] = {func = commands.silent.update.reset, args = {'--', {method = 'find_filename'}}},
+    ['-'] = {
+      func = commands.silent.update.reset,
+      args = { '--', { method = 'find_filename' } },
+    },
   },
 }
 

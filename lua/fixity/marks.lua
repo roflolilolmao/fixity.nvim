@@ -1,14 +1,14 @@
-local namespace = vim.api.nvim_create_namespace'fixity'
+local namespace = vim.api.nvim_create_namespace 'fixity'
 
 local Position = {}
 
 setmetatable(Position, {
   __index = function(t, k)
-    local index = {row = 1, col = 2}
+    local index = { row = 1, col = 2 }
     return t[index[k]]
   end,
   __call = function(t, ...)
-    local pos = {...}
+    local pos = { ... }
     setmetatable(pos, getmetatable(t))
     return pos
   end,
@@ -49,13 +49,7 @@ function Mark.new(buf, id, start, end_, hl_group)
 
   opts = vim.tbl_extend('force', opts, options or {})
 
-  vim.api.nvim_buf_set_extmark(
-    buf,
-    namespace,
-    start.row,
-    start.col,
-    opts
-  )
+  vim.api.nvim_buf_set_extmark(buf, namespace, start.row, start.col, opts)
 
   local mark = {
     buf = buf,
@@ -109,7 +103,9 @@ function Marks:set_marks()
 end
 
 function Marks:get_cursor()
-  local row, col = unpack(vim.api.nvim_win_get_cursor(vim.fn.bufwinid(self.buf)))
+  local row, col = unpack(
+    vim.api.nvim_win_get_cursor(vim.fn.bufwinid(self.buf))
+  )
   return Position(row - 1, col)
 end
 
@@ -121,7 +117,7 @@ function Marks:get_cursor_mark()
     namespace,
     cursor,
     0,
-    {limit = 1, details = true}
+    { limit = 1, details = true }
   )[1]
 
   if not result then
@@ -143,7 +139,7 @@ function Marks:find_mark_from_cursor(end_search)
     namespace,
     self:get_cursor(),
     end_search,
-    {limit = 1, details = true}
+    { limit = 1, details = true }
   )[1]
   if not mark then
     return nil
@@ -174,7 +170,7 @@ end
 function Marks:jump(mark)
   vim.api.nvim_win_set_cursor(
     vim.fn.bufwinid(self.buf),
-    {mark.start.row + 1, mark.start.col}
+    { mark.start.row + 1, mark.start.col }
   )
 
   self:set_view(mark)

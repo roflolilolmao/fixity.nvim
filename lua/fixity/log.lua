@@ -1,20 +1,32 @@
-local commands = require'fixity.commands'
-local repo = require'fixity.repo'
+local commands = require 'fixity.commands'
+local repo = require 'fixity.repo'
 
-local Log = require'fixity.display':new{
-  __module = 'log';
+local Log = require('fixity.display'):new {
+  __module = 'log',
   keymaps = {
-    ['o'] = {method = 'compact_summary'};
+    ['o'] = { method = 'compact_summary' },
 
-    ['co'] = {func = commands.update.checkout, args = {method = 'cursor_mark_contents'}};
+    ['co'] = {
+      func = commands.update.checkout,
+      args = { method = 'cursor_mark_contents' },
+    },
 
-    ['d'] = {func = commands.update.branch, args = {'-d', {method = 'cursor_mark_contents'}}},
-    ['D'] = {func = commands.update.branch, args = {'-D', {method = 'cursor_mark_contents'}}};
+    ['d'] = {
+      func = commands.update.branch,
+      args = { '-d', { method = 'cursor_mark_contents' } },
+    },
+    ['D'] = {
+      func = commands.update.branch,
+      args = { '-D', { method = 'cursor_mark_contents' } },
+    },
 
-    ['rr'] = {func = commands.update.rebase, args = {method = 'find_commit'}},
-    ['ri'] = {func = commands.update.rebase, args = {'--interactive', {method = 'find_commit'}}};
+    ['rr'] = { func = commands.update.rebase, args = { method = 'find_commit' } },
+    ['ri'] = {
+      func = commands.update.rebase,
+      args = { '--interactive', { method = 'find_commit' } },
+    },
 
-    ['rs'] = {func = commands.update.reset, args = {method = 'find_commit'}};
+    ['rs'] = { func = commands.update.reset, args = { method = 'find_commit' } },
   },
   split = 'topleft vsplit',
   syntax = [[
@@ -32,14 +44,16 @@ local Log = require'fixity.display':new{
 }
 
 function Log:preprocess_lines(lines)
-  return vim.tbl_map(function(line) return line:gsub('%s*$', '') end, lines)
+  return vim.tbl_map(function(line)
+    return line:gsub('%s*$', '')
+  end, lines)
 end
 
 function Log:set_marks()
   local function process_mark(row, line, start, end_)
     line = line:sub(start, end_)
 
-    local found = line:find(' %-> ')
+    local found = line:find ' %-> '
     if found then
       start = start + found + 3
       line = line:gsub('.* -> ', '')
@@ -56,11 +70,15 @@ function Log:set_marks()
       hl_group = 'luaError'
     end
 
-    self:set_mark({row = row, col = start}, {row = row, col = end_}, hl_group)
+    self:set_mark(
+      { row = row, col = start },
+      { row = row, col = end_ },
+      hl_group
+    )
   end
 
-  local decorated_line = vim.regex[[^[ *\/|]*\s*\x*\s*(.\{-})\s]]
-  local decoration = vim.regex[[(.\{-})]]
+  local decorated_line = vim.regex [[^[ *\/|]*\s*\x*\s*(.\{-})\s]]
+  local decoration = vim.regex [[(.\{-})]]
 
   local offset = #self.buffer_header
   local lines = vim.api.nvim_buf_get_lines(self.buf, offset, -1, false)
@@ -80,12 +98,12 @@ function Log:set_marks()
 end
 
 function Log:find_commit()
-  return vim.api.nvim_get_current_line():match[[^[ */\|]*%s*(%x*)%s*.*$]]
+  return vim.api.nvim_get_current_line():match [[^[ */\|]*%s*(%x*)%s*.*$]]
 end
 
 function Log:compact_summary()
   local commit = self:find_commit()
-  require'fixity.compact-summary':send_it('diff', {
+  require('fixity.compact-summary'):send_it('diff', {
     '--compact-summary',
     string.format('%s^..%s', commit, commit),
   })
