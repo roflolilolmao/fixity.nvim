@@ -88,6 +88,7 @@ function Log:set_marks()
 
     if decorated_line:match_str(line) then
       start, end_ = decoration:match_str(line)
+      line = line:sub(1, end_) -- avoids matching commas after the decoration
       repeat
         found = line:find(', ', start + 1, true) or end_
         process_mark(row + offset, line, start + 2, found - 1)
