@@ -18,6 +18,7 @@ local Display = {
     ['<Esc>'] = close_all,
 
     ['f'] = { func = commands.update.fetch, args = { '--all', '--prune' } },
+    ['F'] = { func = commands.update.pull },
 
     ['cc'] = commands.update.commit,
     ['ca'] = { func = commands.update.commit, args = { '--amend' } },
@@ -25,6 +26,9 @@ local Display = {
 
     ['xp'] = commands.update.push,
     ['xPF'] = { func = commands.update.push, args = { '--force' } },
+
+    ['ss'] = commands.update.stash,
+    ['sp'] = { func = commands.update.stash, args = { 'pop' } },
   },
   split = 'leftabove split',
   options = {},

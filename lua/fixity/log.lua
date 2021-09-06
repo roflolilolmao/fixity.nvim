@@ -8,7 +8,17 @@ local Log = require('fixity.display'):new {
 
     ['co'] = {
       func = commands.update.checkout,
-      args = { method = 'cursor_mark_contents' },
+      args = {
+        func = function(decoration, commit)
+          return decoration or commit
+        end,
+        args = { { method = 'cursor_mark_contents' }, { method = 'find_commit' } },
+      },
+    },
+
+    ['cp'] = {
+      func = commands.update['cherry-pick'],
+      args = { method = 'find_commit' },
     },
 
     ['d'] = {
@@ -27,6 +37,10 @@ local Log = require('fixity.display'):new {
     },
 
     ['rs'] = { func = commands.update.reset, args = { method = 'find_commit' } },
+    ['xRH'] = {
+      func = commands.update.reset,
+      args = { '--hard', { method = 'find_commit' } },
+    },
   },
   split = 'topleft vsplit',
   syntax = [[
