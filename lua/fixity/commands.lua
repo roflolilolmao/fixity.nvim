@@ -66,7 +66,7 @@ local function pop(opts, command, args)
     border = 'rounded',
     style = 'minimal',
   })
-  vim.cmd(string.format([[autocmd TermOpen <buffer=%s> startinsert!]], buf))
+  vim.cmd(string.format([[autocmd TermOpen <buffer=%s> startinsert]], buf))
 
   -- For some reason, setting the Normal highlight to itself will fix the
   -- background (this might be because my background is set to nil)
