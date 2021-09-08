@@ -168,12 +168,14 @@ function Marks:previous()
 end
 
 function Marks:jump(mark)
+  if not mark then
+    return
+  end
+
   vim.api.nvim_win_set_cursor(
     vim.fn.bufwinid(self.buf),
     { mark.start.row + 1, mark.start.col }
   )
-
-  self:set_view(mark)
 end
 
 function Marks:jump_to_next()

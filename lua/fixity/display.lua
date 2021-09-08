@@ -108,7 +108,7 @@ function Display:create_buf(lines)
   self:set_keymaps()
   self:set_syntax()
   self:set_highlights()
-  self:set_view()
+  self:set_view(self:next())
 end
 
 function Display:set_content(content)
@@ -131,7 +131,7 @@ function Display:set_content(content)
   self:set_marks()
 end
 
-function Display:set_view(_)
+function Display:set_view(mark)
   local win = vim.fn.bufwinid(self.buf)
 
   if win > 0 and self.options.winfixheight then
@@ -139,6 +139,8 @@ function Display:set_view(_)
     vim.api.nvim_win_set_option(win, 'winfixheight', true)
     vim.fn.win_execute(win, [[call winrestview({'topline': 1})]])
   end
+
+  self:jump(mark)
 end
 
 function Display:update()
@@ -158,7 +160,7 @@ function Display:update()
       -- DEV: `set_syntax` and `set_highlights` should be removed
       self:set_syntax()
       self:set_highlights()
-      self:set_view()
+      self:set_view(self:next())
     end)
   end)[self.command](self.args)
 end
