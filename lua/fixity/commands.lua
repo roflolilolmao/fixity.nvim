@@ -25,6 +25,31 @@ local function build_args(args)
   )
 end
 
+local function pop(opts, command, args)
+  local buf = vim.api.nvim_create_buf(false, true)
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = 'win',
+    width = 80,
+    height = 24,
+    row = 1,
+    col = 3,
+    border = 'rounded',
+    style = 'minimal',
+  })
+  vim.cmd(string.format([[autocmd TermOpen <buffer=%s> startinsert]], buf))
+
+  vim.fn.termopen(build_args { command, args }, {
+    on_stderr = function(...)
+      print(vim.inspect { 'stderr', ... })
+    end,
+    on_exit = function()
+      if opts.update then
+        require('fixity.display').update_displays()
+      end
+    end,
+  })
+end
+
 local function construct(opts, command, args)
   return require('plenary.job'):new {
     command = command,
@@ -53,39 +78,6 @@ local function construct(opts, command, args)
       end
     end,
   }
-end
-
-local function pop(opts, command, args)
-  local buf = vim.api.nvim_create_buf(false, true)
-  local win = vim.api.nvim_open_win(buf, true, {
-    relative = 'win',
-    width = 80,
-    height = 24,
-    row = 1,
-    col = 3,
-    border = 'rounded',
-    style = 'minimal',
-  })
-  vim.cmd(string.format([[autocmd TermOpen <buffer=%s> startinsert]], buf))
-
-  -- For some reason, setting the Normal highlight to itself will fix the
-  -- background (this might be because my background is set to nil)
-  vim.api.nvim_win_set_option(
-    win,
-    'winhighlight',
-    'Normal:Normal,FloatBorder:Title'
-  )
-
-  vim.fn.termopen(build_args { command, args }, {
-    on_stderr = function(...)
-      print(vim.inspect { 'stderr', ... })
-    end,
-    on_exit = function()
-      if opts.update then
-        require('fixity.display').update_displays()
-      end
-    end,
-  })
 end
 
 local function send_it(opts, command, ...)
