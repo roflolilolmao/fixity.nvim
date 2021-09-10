@@ -158,6 +158,11 @@ setmetatable(commands, {
     setmetatable(t, OptionsMaker)
     return t[k]
   end,
+  __call = function(t, k, ...)
+      return t[k](...)
+  end,
 })
+
+vim.cmd "command! -nargs=+ F lua require'fixity.commands'(<f-args>)"
 
 return commands
