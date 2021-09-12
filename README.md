@@ -1,3 +1,7 @@
-# nvim-fixity
+# fixity
 
-Small plugin to have use `git log` and `git show` in Neovim.
+Experimental plugin for git in Neovim; motivated by my frustrations with vim-fugitive.
+
+## Status
+
+Unstable and not very usable.
