@@ -16,6 +16,11 @@ local Log = require('fixity.display'):new {
       },
     },
 
+    ['cf'] = {
+      func = commands.update.silent.commit,
+      args = { '--fixup', { method = 'find_commit' }}
+    },
+
     ['cp'] = {
       func = commands.update['cherry-pick'],
       args = { method = 'find_commit' },
@@ -35,6 +40,11 @@ local Log = require('fixity.display'):new {
       func = commands.update.rebase,
       args = { '--interactive', { method = 'find_commit' } },
     },
+    ['rf'] = {
+      func = commands.update.rebase,
+      args = { '--interactive', '--autosquash', { method = 'find_commit' } },
+    },
+
 
     ['rs'] = { func = commands.update.reset, args = { method = 'find_commit' } },
     ['xRH'] = {
