@@ -39,6 +39,7 @@ local function pop(opts, command, args)
   vim.cmd(string.format([[autocmd TermOpen <buffer=%s> startinsert]], buf))
 
   vim.fn.termopen(build_args { command, args }, {
+    cwd = opts.cwd,
     on_stderr = function(...)
       print(vim.inspect { 'stderr', ... })
     end,

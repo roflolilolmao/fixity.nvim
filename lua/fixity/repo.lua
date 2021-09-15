@@ -1,4 +1,10 @@
-local probe = require('fixity.commands').silent.cwd '.'
+local file_dir = vim.fn.expand('%:h')
+
+if file_dir == '' then
+  file_dir = '.'
+end
+
+local probe = require('fixity.commands').silent.cwd(file_dir)
 
 local M = {}
 
