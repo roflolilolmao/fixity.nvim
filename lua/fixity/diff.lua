@@ -1,5 +1,5 @@
-local Diff = require('fixity.display'):new {
-  __module = 'diff',
+local Diff = require('fixity.display'):extend {
+  _module = 'diff',
   keymaps = {
     -- TODO: this command should only exist for unstaged
     ['-'] = { method = 'stage_hunk' },
@@ -40,37 +40,22 @@ function Diff:set_marks()
 
   for row, line in ipairs(lines) do
     if hunk_header:match_str(line) then
-      self:set_mark(
+      self:add_mark(
         { row = start, col = 0 },
-        { row = row + offset - 1, col = #lines[row - 1] }
+        { row = row + offset - 1, col = #lines[row - 1] },
+        nil,
+        { lnum = start + 5, col = 1, topline = start + 1 }
       )
       start = row + offset
     end
   end
 
-  self:set_mark(
+  self:add_mark(
     { row = start, col = 0 },
-    { row = #lines + offset, col = #lines[#lines] }
+    { row = #lines + offset, col = #lines[#lines] },
+    nil,
+    { lnum = start + 5, col = 1, topline = start + 1 }
   )
-end
-
-function Diff:set_view(mark)
-  if mark == nil then
-    mark = self.marks[1]
-
-    if mark == nil then
-      return
-    end
-  end
-
-  local win = vim.fn.bufwinid(self.buf)
-  vim.api.nvim_win_set_height(win, #mark:contents())
-
-  -- + 5 offset: 1 for the hunk header, 3 for the context lines, 1 because it
-  -- is 0-based.
-  -- TODO: Actually use the context lines. Right now, on a diff at the top of
-  -- the file, this will not put the cursor at the correct place.
-  vim.fn.winrestview { lnum = mark.start.row + 5, topline = mark.start.row + 1 }
 end
 
 function Diff:should_close()

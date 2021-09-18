@@ -1,10 +1,13 @@
 local commands = require 'fixity.commands'
 local repo = require 'fixity.repo'
 
-local Log = require('fixity.display'):new {
-  __module = 'log',
+local Log = require('fixity.display'):extend {
+  _module = 'log',
   keymaps = {
-    ['o'] = { method = 'compact_summary' },
+    ['o'] = {
+        func = require'fixity'.compact_summary,
+        args = { method = 'find_commit' },
+    },
 
     ['co'] = {
       func = commands.update.checkout,
@@ -52,7 +55,9 @@ local Log = require('fixity.display'):new {
       args = { '--hard', { method = 'find_commit' } },
     },
   },
-  split = 'topleft vsplit',
+  options = {
+    split = 'topleft vsplit',
+  },
   syntax = [[
     syn clear
 
@@ -94,7 +99,7 @@ function Log:set_marks()
       hl_group = 'luaError'
     end
 
-    self:set_mark(
+    self:add_mark(
       { row = row, col = start },
       { row = row, col = end_ },
       hl_group
@@ -124,14 +129,6 @@ end
 
 function Log:find_commit()
   return vim.api.nvim_get_current_line():match [[^[ */\|]*%s*(%x*)%s*.*$]]
-end
-
-function Log:compact_summary()
-  local commit = self:find_commit()
-  require('fixity.compact-summary'):send_it('diff', {
-    '--compact-summary',
-    string.format('%s^..%s', commit, commit),
-  })
 end
 
 return Log

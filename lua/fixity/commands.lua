@@ -45,7 +45,7 @@ local function pop(opts, command, args)
     end,
     on_exit = function()
       if opts.update then
-        require('fixity.display').update_displays()
+        require('fixity.displays').update()
       end
     end,
   })
@@ -70,12 +70,6 @@ local function construct(opts, command, args)
 
       if opts.callback then
         opts.callback(result)
-      end
-
-      if opts.schedule then
-        vim.schedule(function()
-          opts.schedule(result)
-        end)
       end
     end,
   }
@@ -107,7 +101,7 @@ local function send_it(opts, command, ...)
   job:wait()
 
   if opts.update then
-    require('fixity.display').update_displays()
+    require('fixity.displays').update()
   end
 end
 
@@ -135,7 +129,6 @@ local __options = {
 
   callback = setter 'callback',
   cwd = setter 'cwd',
-  schedule = setter 'schedule',
   stdin = setter 'stdin',
 }
 

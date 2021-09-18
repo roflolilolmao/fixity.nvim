@@ -1,7 +1,7 @@
 local commands = require 'fixity.commands'
 
-local CompactSummary = require('fixity.display'):new {
-  __module = 'compact-summary',
+local CompactSummary = require('fixity.display'):extend {
+  _module = 'compact-summary',
   keymaps = {
     ['o'] = { method = 'diff_file' },
   },
@@ -34,20 +34,21 @@ function CompactSummary:diff_file()
     local commit
     if type(self.args) == 'table' then
       commit = vim.tbl_filter(function(a)
-        return a ~= '--compact-summary'
+        return not a:match('%-%-')
       end, self.args)
     else
       commit = ''
     end
-    require('fixity.diff'):send_it('diff', { commit, '--', filename })
+
+    require('fixity').diff(commit, filename)
   else
     print 'no file on the current line'
   end
 end
 
-CompactSummary.unstaged = CompactSummary:new {
-  __module = 'compact-summary',
-  __name = 'unstaged',
+CompactSummary.unstaged = CompactSummary:extend {
+  _module = 'compact-summary',
+  _name = 'unstaged',
   keymaps = {
     ['-'] = {
       func = commands.silent.update.add,
@@ -60,9 +61,9 @@ CompactSummary.unstaged = CompactSummary:new {
   },
 }
 
-CompactSummary.staged = CompactSummary:new {
-  __module = 'compact-summary',
-  __name = 'staged',
+CompactSummary.staged = CompactSummary:extend {
+  _module = 'compact-summary',
+  _name = 'staged',
   keymaps = {
     ['-'] = {
       func = commands.silent.update.reset,

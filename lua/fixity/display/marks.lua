@@ -39,15 +39,13 @@ setmetatable(Position, {
 local Mark = {}
 Mark.__index = Mark
 
-function Mark.new(buf, id, start, end_, hl_group)
+function Mark.new(buf, id, start, end_, hl_group, view)
   local opts = {
     id = id,
     end_col = end_.col,
     end_line = end_.row,
     hl_group = hl_group,
   }
-
-  opts = vim.tbl_extend('force', opts, options or {})
 
   vim.api.nvim_buf_set_extmark(buf, namespace, start.row, start.col, opts)
 
@@ -57,6 +55,7 @@ function Mark.new(buf, id, start, end_, hl_group)
     start = Position(start.row, start.col),
     end_ = Position(end_.row, end_.col),
     hl_group = hl_group,
+    view = view or { lnum = start.row + 1, col = start.col, topline = 1 },
   }
   setmetatable(mark, Mark)
   return mark
@@ -80,6 +79,20 @@ function Mark:contents()
   return lines
 end
 
+function Mark:jump()
+  local height = self.end_.row - self.start.row
+
+  local win = vim.fn.bufwinid(self.buf)
+
+  if height  > 0 then
+    vim.api.nvim_win_set_height(win, height + 1)
+  end
+
+  vim.api.nvim_win_call(win, function()
+    vim.fn.winrestview(self.view)
+  end)
+end
+
 local Marks = {}
 
 function Marks:clear_namespace()
@@ -87,7 +100,7 @@ function Marks:clear_namespace()
   self.marks = {}
 end
 
-function Marks:set_mark(...)
+function Marks:add_mark(...)
   local id = #self.marks + 1
   self.marks[id] = Mark.new(self.buf, id, ...)
 end
@@ -98,7 +111,7 @@ function Marks:set_marks()
 
   for row, line in ipairs(lines) do
     row = row + offset - 1
-    self:set_mark(Position(row, 0), Position(row, #line))
+    self:add_mark(Position(row, 0), Position(row, #line))
   end
 end
 
@@ -167,23 +180,18 @@ function Marks:previous()
   return self.marks[mark.id - 1] or self.marks[#self.marks]
 end
 
-function Marks:jump(mark)
-  if not mark then
-    return
-  end
-
-  vim.api.nvim_win_set_cursor(
-    vim.fn.bufwinid(self.buf),
-    { mark.start.row + 1, mark.start.col }
-  )
-end
-
 function Marks:jump_to_next()
-  self:jump(self:next())
+  local mark = self:next()
+  if mark then
+    mark:jump()
+  end
 end
 
 function Marks:jump_to_previous()
-  self:jump(self:previous())
+  local mark = self:previous()
+  if mark then
+    mark:jump()
+  end
 end
 
 function Marks:cursor_mark_contents()
