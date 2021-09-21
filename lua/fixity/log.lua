@@ -1,27 +1,32 @@
 local commands = require 'fixity.commands'
 local repo = require 'fixity.repo'
 
+local find_target = {
+  func = function(decoration, commit)
+    return decoration or commit
+  end,
+  args = {
+    { method = 'cursor_mark_contents' },
+    { method = 'find_commit' },
+  },
+}
+
 local Log = require('fixity.display'):extend {
   _module = 'log',
   keymaps = {
     ['o'] = {
-        func = require'fixity'.compact_summary,
-        args = { method = 'find_commit' },
+      func = require('fixity').compact_summary,
+      args = { method = 'find_commit' },
     },
 
     ['co'] = {
       func = commands.update.checkout,
-      args = {
-        func = function(decoration, commit)
-          return decoration or commit
-        end,
-        args = { { method = 'cursor_mark_contents' }, { method = 'find_commit' } },
-      },
+      args = find_target,
     },
 
     ['cf'] = {
       func = commands.update.silent.commit,
-      args = { '--fixup', { method = 'find_commit' }}
+      args = { '--fixup', { method = 'find_commit' } },
     },
 
     ['cp'] = {
@@ -38,7 +43,10 @@ local Log = require('fixity.display'):extend {
       args = { '-D', { method = 'cursor_mark_contents' } },
     },
 
-    ['rr'] = { func = commands.update.rebase, args = { method = 'find_commit' } },
+    ['rr'] = {
+      func = commands.update.rebase,
+      args = { method = 'find_commit' },
+    },
     ['ri'] = {
       func = commands.update.rebase,
       args = { '--interactive', { method = 'find_commit' } },
@@ -48,8 +56,15 @@ local Log = require('fixity.display'):extend {
       args = { '--interactive', '--autosquash', { method = 'find_commit' } },
     },
 
+    ['xm'] = {
+      func = commands.update.merge,
+      args = find_target,
+    },
 
-    ['rs'] = { func = commands.update.reset, args = { method = 'find_commit' } },
+    ['rs'] = {
+      func = commands.update.reset,
+      args = { method = 'find_commit' },
+    },
     ['xRH'] = {
       func = commands.update.reset,
       args = { '--hard', { method = 'find_commit' } },
