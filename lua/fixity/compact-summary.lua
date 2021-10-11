@@ -34,15 +34,13 @@ function CompactSummary:diff_file()
     local commit
     if type(self.args) == 'table' then
       commit = vim.tbl_filter(function(a)
-        return not a:match('%-%-')
+        return not a:match '%-%-'
       end, self.args)
     else
       commit = ''
     end
 
     require('fixity').diff(commit, filename)
-  else
-    print 'no file on the current line'
   end
 end
 
@@ -56,7 +54,7 @@ CompactSummary.unstaged = CompactSummary:extend {
     },
     ['d'] = {
       func = commands.silent.update.checkout,
-      args = { method = 'find_filename' },
+      args = { '--', { method = 'find_filename' } },
     },
   },
 }
@@ -69,7 +67,18 @@ CompactSummary.staged = CompactSummary:extend {
       func = commands.silent.update.reset,
       args = { '--', { method = 'find_filename' } },
     },
+    ['d'] = {
+      func = commands.silent.update.restore,
+      args = { '--staged', '--worktree', { method = 'find_filename' } },
+    },
   },
 }
+
+function CompactSummary.staged:diff_file()
+  local filename = self:find_filename()
+  if filename ~= nil then
+    require('fixity').diff('--cached', filename)
+  end
+end
 
 return CompactSummary
