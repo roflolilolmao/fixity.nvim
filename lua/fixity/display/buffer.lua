@@ -39,24 +39,12 @@ function Buffer:preprocess_lines(contents)
 end
 
 function Buffer:set_contents(contents)
-  self.buffer_header = {
-    table.concat(vim.tbl_flatten { self.command, { self.args } }, ' '),
-    '',
-  }
-
   contents = self:preprocess_lines(contents)
 
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', true)
-  vim.api.nvim_buf_set_lines(self.buf, 0, -1, false, self.buffer_header)
-  vim.api.nvim_buf_set_lines(self.buf, -1, -1, false, contents)
+  vim.api.nvim_buf_set_lines(self.buf, 0, -1, false, contents)
   vim.api.nvim_buf_set_option(self.buf, 'modifiable', false)
 
-  local win = vim.fn.bufwinid(self.buf)
-
-  if win > 0 and self.options.winfixheight then
-    vim.api.nvim_win_set_height(win, vim.api.nvim_buf_line_count(self.buf))
-    vim.api.nvim_win_set_option(win, 'winfixheight', true)
-  end
 end
 
 return Buffer

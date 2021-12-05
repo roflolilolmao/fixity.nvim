@@ -1,4 +1,4 @@
-local Diff = require('fixity.display'):extend {
+local Diff = {
   _module = 'diff',
   keymaps = {
     -- TODO: this command should only exist for unstaged

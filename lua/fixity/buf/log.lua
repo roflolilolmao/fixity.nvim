@@ -11,7 +11,7 @@ local find_target = {
   },
 }
 
-local Log = require('fixity.display'):extend {
+local Log = {
   _module = 'log',
   keymaps = {
     ['o'] = {
@@ -70,9 +70,6 @@ local Log = require('fixity.display'):extend {
       args = { '--hard', { method = 'find_commit' } },
     },
   },
-  options = {
-    split = 'topleft vsplit',
-  },
   syntax = [[
     syn clear
 
@@ -87,10 +84,21 @@ local Log = require('fixity.display'):extend {
   ]],
 }
 
-function Log:preprocess_lines(lines)
-  return vim.tbl_map(function(line)
-    return line:gsub('%s*$', '')
-  end, lines)
+function Log.lines()
+  local lines
+  commands.silent.callback(function(result)
+    lines = vim.tbl_map(function(line)
+      return line:gsub('%s*$', '')
+    end, result)
+  end).log {
+    '--decorate',
+    '--oneline',
+    '--graph',
+    '--branches',
+    '--remotes',
+    'HEAD',
+  }
+  return lines
 end
 
 function Log:set_marks()
@@ -151,7 +159,7 @@ function Log:set_marks()
 
   vim.api.nvim_buf_set_extmark(
     self.buf,
-    require'fixity.display.marks'.namespace,
+    require'fixity.buf.marks'.namespace,
     0,
     2,
     {

@@ -45,6 +45,10 @@ function M.diff(commit, filename)
   require('fixity.diff'):send_it('diff', { commit, '--', filename })
 end
 
+function M.df()
+  require'fixity.buf':new()
+end
+
 function M.dev_func()
   local displays = require 'fixity.displays'
 
