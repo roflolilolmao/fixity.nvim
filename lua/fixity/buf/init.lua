@@ -4,7 +4,7 @@ local Buffer = vim.tbl_deep_extend(
   'error',
   {
     options = {
-      split = 'leftabove split',
+      split = 'leftabove vsplit',
     },
     keymaps = {
       ['n'] = { method = 'jump_to_next' },
@@ -29,7 +29,6 @@ local Buffer = vim.tbl_deep_extend(
       ['sp'] = { func = commands.update.stash, args = { 'pop' } },
     },
   },
-  require 'fixity.buf.buffer',
   require 'fixity.buf.marks',
   require 'fixity.buf.maps'
 )
@@ -53,7 +52,7 @@ function Buffer:create_buf()
   vim.api.nvim_buf_set_option(self.buf, 'bufhidden', 'wipe')
   vim.api.nvim_buf_set_option(self.buf, 'filetype', 'fixity')
 
-  vim.cmd(self.syntax)
+  -- vim.cmd(self.syntax)
 end
 
 function Buffer:append(contents)
@@ -68,6 +67,7 @@ function Buffer:new(table)
   instance:create_buf()
   -- instance:update()
 
+  instance:append(require'fixity.buf.untracked'.lines())
   instance:append(require'fixity.buf.log'.lines())
 end
 

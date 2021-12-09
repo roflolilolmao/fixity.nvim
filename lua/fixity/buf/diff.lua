@@ -17,7 +17,7 @@ local Diff = {
 function Diff:set_marks()
   local hunk_header = vim.regex [[^@@.\+@@]]
 
-  local offset = #self.buffer_header
+  local offset = 0
   local lines = vim.api.nvim_buf_get_lines(self.buf, offset, -1, false)
 
   self.header = {}

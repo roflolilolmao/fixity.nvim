@@ -14,6 +14,14 @@ local Untracked = {
   },
 }
 
+function Untracked.lines()
+  local lines
+  commands.silent.callback(function(result)
+    lines = result
+  end)['ls-files'] { '--others', '--exclude-standard' }
+  return lines
+end
+
 function Untracked:find_filename()
   return vim.api.nvim_get_current_line():match [[^(%S*)$]]
 end
